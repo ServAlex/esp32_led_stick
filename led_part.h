@@ -2,6 +2,7 @@
 #define led_part_h
 
 #include <FastLED.h>
+#include "FastLED_RGBW.h"
 
 FASTLED_USING_NAMESPACE
 
@@ -24,8 +25,10 @@ FASTLED_USING_NAMESPACE
 #define LED_TYPE    WS2811
 
 #define COLOR_ORDER GRB
-#define NUM_LEDS    30
-CRGB leds[NUM_LEDS];
+#define NUM_LEDS    72
+//CRGB leds[NUM_LEDS];
+CRGBW leds[NUM_LEDS];
+CRGB *ledsRGB = (CRGB *) &leds[0];
 
 #define BRIGHTNESS          26
 #define FRAMES_PER_SECOND  (120*2*2)
@@ -59,7 +62,22 @@ void juggle();
 void redBlue();
 uint8_t correctIntensity(uint8_t val);
 
-SimplePatternList gPatterns = { redBlue, blank, runner, solidWhite, solidHue, solidRed, solidGreen, solidBlue, rainbow, fixedRainbow, /*confetti,*/ sinelon, juggle, bpm};
+SimplePatternList gPatterns = { 
+    redBlue, 
+    blank, 
+//    runner, 
+    solidWhite, 
+    solidHue, 
+    solidRed, 
+    solidGreen, 
+    solidBlue, 
+    rainbow, 
+    fixedRainbow, 
+    /*confetti,*/ 
+//    sinelon, 
+//    juggle, 
+    bpm
+};
 
 int maxBrightness = 10;
 int brightness = 0;
@@ -67,9 +85,14 @@ int brightnessMultiplier = 28;
 
 void led_setup()
 {
+/*
   FastLED.addLeds<LED_TYPE,DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   // set master brightness control
   FastLED.setBrightness(10);
+*/
+	FastLED.addLeds<WS2812B, DATA_PIN, RGB>(ledsRGB, getRGBWsize(NUM_LEDS));
+	FastLED.setBrightness(brightness);
+	FastLED.show();
 }
 
 void led_refresh()
@@ -158,12 +181,22 @@ String currentPatternName()
 void rainbow() 
 {
   // FastLED's built-in rainbow generator
-  fill_rainbow( leds, NUM_LEDS, gHue, 7);
+  //fill_rainbow( leds, NUM_LEDS, gHue, 7);
+
+	for(int i = 0; i < NUM_LEDS; i++){
+		leds[i] = CHSV((i * 256 / NUM_LEDS) + gHue, 255, 255);
+	}
+	FastLED.show();
+	gHue++;
 }
 
 void fixedRainbow() 
 {
-  fill_rainbow( leds, NUM_LEDS, parameter8, 7);
+//  fill_rainbow( leds, NUM_LEDS, parameter8, 7);
+	for(int i = 0; i < NUM_LEDS; i++){
+		leds[i] = CHSV((i * 256 / NUM_LEDS) + gHue, 255, 255);
+	}
+	FastLED.show();
 }
 
 void rainbowWithGlitter() 
@@ -172,28 +205,31 @@ void rainbowWithGlitter()
   rainbow();
   addGlitter(80);
 }
-
 void addGlitter( fract8 chanceOfGlitter) 
 {
+/*
   if( random8() < chanceOfGlitter) {
-    leds[ random16(NUM_LEDS) ] += CRGB::White;
+    leds[ random16(NUM_LEDS) ] += CRGBW(255, 255, 255, 255);
   }
+*/
 }
-
 void confetti() 
 {
+/*
   // random colored speckles that blink in and fade smoothly
   fadeToBlackBy( leds, NUM_LEDS, 10);
   int pos = random16(NUM_LEDS);
   leds[pos] += CHSV( gHue + random8(64), 200, 255);
+*/
 }
-
 void sinelon()
 {
+/*
   // a colored dot sweeping back and forth, with fading trails
   fadeToBlackBy( leds, NUM_LEDS, 20);
   int pos = beatsin16( 13, 0, NUM_LEDS-1 );
   leds[pos] += CHSV( gHue, 255, 192);
+*/
 }
 
 void bpm()
@@ -210,40 +246,43 @@ void bpm()
 void blank()
 {
   for(int i=0; i<NUM_LEDS; i++)
-    leds[i] = CHSV(0, 0, 0);
+    leds[i] = CRGBW(0, 0, 0);
+    //leds[i] = CHSV(0, 0, 0);
 }
 void solidGreen()
 {
   // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
   for( int i = 0; i < NUM_LEDS; i++) { //9948
-    leds[i] = CRGB(0, 255, 0);
+    leds[i] = CRGBW(0, 255, 0);
   }
 }
 void solidRed()
 {
   // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
   for( int i = 0; i < NUM_LEDS; i++) { //9948
-    leds[i] = CRGB(255, 0, 0);
+    leds[i] = CRGBW(255, 0, 0);
   }
 }
 void solidBlue()
 {
   // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
   for( int i = 0; i < NUM_LEDS; i++) { //9948
-    leds[i] = CRGB(0, 0, 255);
+    leds[i] = CRGBW(0, 0, 255);
   }
 }
 void solidWhite()
 {
   // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
   for( int i = 0; i < NUM_LEDS; i++) { //9948
-    leds[i] = CRGB(255, 255, 255);
+    leds[i] = CRGBW(255, 255, 255, 255);
   }
 }
 void solidHue()
 {
   for( int i = 0; i < NUM_LEDS; i++) 
+  {
     leds[i] = CHSV(parameter8, 255, 255);
+  }
 }
 
 void redBlue()
@@ -256,14 +295,14 @@ void redBlue()
 
   for(int i = 0; i < halfNum; i++)
   {
-    leds[i] = CRGB(255*(i<lit), 0, 0);
-    leds[NUM_LEDS - i - 1] = CRGB(0, 0, 255*(i<lit));
+    leds[i] = CRGBW(255*(i<lit), 0, 0);
+    leds[NUM_LEDS - i - 1] = CRGBW(0, 0, 255*(i<lit));
   }
 
   if(partialLighting != 0)
   {
     leds[lit] = CRGB(correctIntensity(partialLighting), 0, 0);
-    leds[NUM_LEDS - lit - 1] = CRGB(0, 0, correctIntensity(partialLighting));
+    leds[NUM_LEDS - lit - 1] = CRGBW(0, 0, correctIntensity(partialLighting));
   }
 }
 
@@ -288,17 +327,18 @@ static inline uint8_t bitsaw8( accum88 beats_per_minute, uint8_t lowest = 0, uin
 }
 
 int pos = 0;
-
 void runner()
 {
+/*
   fadeToBlackBy( leds, NUM_LEDS, 60);
   leds[(pos++)%NUM_LEDS] = CHSV(0, 0, 255);
   
   //int pos = bitsaw8(189, 0, NUM_LEDS-1 );
   //leds[pos] = CHSV(0, 0, 255);
+*/
 }
-
 void juggle() {
+/*
   // eight colored dots, weaving in and out of sync with each other
   fadeToBlackBy( leds, NUM_LEDS, 20);
   byte dothue = 0;
@@ -306,6 +346,7 @@ void juggle() {
     leds[beatsin16( i+7, 0, NUM_LEDS-1 )] |= CHSV(dothue, 200, 255);
     dothue += 32;
   }
+*/
 }
 
 #endif

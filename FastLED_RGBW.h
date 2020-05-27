@@ -43,12 +43,29 @@ struct CRGBW  {
 		w = wht;
 	}
 
+	CRGBW(uint8_t rd, uint8_t grn, uint8_t blu){
+		r = rd;
+		g = grn;
+		b = blu;
+		w = 0;
+	}
+
 	inline void operator = (const CRGB c) __attribute__((always_inline)){ 
 		this->r = c.r;
 		this->g = c.g;
 		this->b = c.b;
 		this->white = 0;
 	}
+
+    /// add one RGB to another, saturating at 0xFF for each channel
+    inline CRGBW& operator+= (const CRGBW& rhs )
+    {
+        r = qadd8( r, rhs.r);
+        g = qadd8( g, rhs.g);
+        b = qadd8( b, rhs.b);
+		white = rhs.white;
+        return *this;
+    }
 };
 
 inline uint16_t getRGBWsize(uint16_t nleds){
