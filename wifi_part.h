@@ -29,7 +29,7 @@ void wifiSetup(void)
   WiFi.mode(WIFI_STA);
 
   int current = -1;
-  int atemptsRemaining = ssids_count*6;
+  int atemptsRemaining = ssids_count*2;
 
   // Wait for connection
   while (WiFi.status() != WL_CONNECTED && atemptsRemaining-->0) {
