@@ -63,14 +63,14 @@ void redBlue();
 uint8_t correctIntensity(uint8_t val);
 
 SimplePatternList gPatterns = { 
-    redBlue, 
     blank, 
-//    runner, 
     solidWhite, 
-    solidHue, 
     solidRed, 
     solidGreen, 
     solidBlue, 
+    redBlue, 
+    solidHue, 
+    runner, 
     rainbow, 
     fixedRainbow, 
     /*confetti,*/ 
@@ -91,7 +91,8 @@ void led_setup()
   FastLED.setBrightness(10);
 */
 	FastLED.addLeds<WS2812B, DATA_PIN, RGB>(ledsRGB, getRGBWsize(NUM_LEDS));
-	FastLED.setBrightness(brightness);
+	//FastLED.setBrightness(brightness);
+	FastLED.setBrightness(brightness*brightnessMultiplier + 3);
 	FastLED.show();
 }
 
@@ -100,7 +101,7 @@ void led_refresh()
   gPatterns[gCurrentPatternNumber]();
 
   FastLED.show();  
-  FastLED.delay(1000/(60)); 
+  FastLED.delay(1000/(90)); 
   //FastLED.delay(1000/(30*fpsMultiplier)); 
   //FastLED.delay(1000/(FRAMES_PER_SECOND)); 
 }
@@ -291,19 +292,20 @@ void redBlue()
   uint8_t reversedParameter = 255 - parameter8;
 
   uint8_t lit = (reversedParameter*halfNum)/255;
-  uint8_t partialLighting = (reversedParameter*halfNum)%255;
+//  uint8_t partialLighting = (reversedParameter*halfNum)%255;
 
   for(int i = 0; i < halfNum; i++)
   {
     leds[i] = CRGBW(255*(i<lit), 0, 0);
     leds[NUM_LEDS - i - 1] = CRGBW(0, 0, 255*(i<lit));
   }
-
+/*
   if(partialLighting != 0)
   {
     leds[lit] = CRGB(correctIntensity(partialLighting), 0, 0);
     leds[NUM_LEDS - lit - 1] = CRGBW(0, 0, correctIntensity(partialLighting));
   }
+*/
 }
 
 uint8_t correctIntensity(uint8_t val)
@@ -329,13 +331,35 @@ static inline uint8_t bitsaw8( accum88 beats_per_minute, uint8_t lowest = 0, uin
 int pos = 0;
 void runner()
 {
-/*
-  fadeToBlackBy( leds, NUM_LEDS, 60);
-  leds[(pos++)%NUM_LEDS] = CHSV(0, 0, 255);
+  
+  for( int i = 0; i < NUM_LEDS; i++) 
+  {
+    uint8_t level = correctIntensity(leds[i].white*0.99);
+    //uint8_t level = correctIntensity(max(0, leds[i].white-10));
+    leds[i] = CRGBW(level, level, level, level);
+  }
+  
+  //fadeToBlackBy( leds, NUM_LEDS, 60);
+
+  /*
+  for( uint16_t i = 0; i < NUM_LEDS; i++) 
+  {
+    uint16_t scale_fixed = 255 - 60 + 1;
+//    uint8_t r = (((uint16_t)leds[i].r) * scale_fixed) >> 8;
+//    uint8_t g = (((uint16_t)leds[i].g) * scale_fixed) >> 8;
+//    uint8_t b = (((uint16_t)leds[i].b) * scale_fixed) >> 8;
+    uint8_t white = (((uint16_t)leds[i].white) * scale_fixed) >> 8;
+    //leds[i] = CRGBW(r, g, b, white);
+    leds[i] = CRGBW(white, white, white, white);
+  }
+  */
+
+  leds[(pos++)%NUM_LEDS] = CRGBW(255,255,255,255);
+  //CHSV(0, 0, 255);
   
   //int pos = bitsaw8(189, 0, NUM_LEDS-1 );
   //leds[pos] = CHSV(0, 0, 255);
-*/
+
 }
 void juggle() {
 /*

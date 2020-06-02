@@ -54,6 +54,7 @@ void button1PresHandler()
   report();
 }
 
+
 void buttonUpPresHandler()
 {
   currentMenu = (--currentMenu+menuCount)%menuCount;
@@ -79,13 +80,15 @@ void buttonRightPresHandler()
 
 //void bothButtonsPressHandler() {}
 
+uint32_t lastUpdated = 0;
+
 void report()
 {
   uint16_t v = analogRead(ADC_PIN);
   float battery_voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
 
-  clearScreen();
   tft.setTextColor(TFT_GREEN, TFT_BLACK);
+  clearScreen();
   tft.drawString(currentPatternName() + " " + String(gCurrentPatternNumber+1) + "/" + ARRAY_SIZE(gPatterns), tft.width() / 2, tft.height() / 2 - 30-10);
   //tft.drawString("Speed " + String(fpsMultiplier) + "/10", tft.width() / 2, tft.height() / 2-10);
   tft.drawString(parameterNameForCurrentPattern() + " " + String(parameter8), tft.width() / 2, tft.height() / 2-10);
@@ -102,6 +105,8 @@ void setup() {
   Serial.begin(115200);
   Serial.println("Start");
 
+  lastUpdated = millis();
+
   displaySetup();
   buttonsSetup();
 
@@ -111,19 +116,14 @@ void setup() {
   delay(200); 
 }
 
-uint32_t lastUpdated = 0;
-
 void secondTask()
 {
-  /*
   uint32_t time = millis();
-  if(lastUpdated - time > 100)
+  if(time - lastUpdated > 10000)
   {
-    //report(); 
-    //secondTask();
+    report(); 
     lastUpdated = time;
   }
-  */
 }
   
 void loop()
@@ -131,7 +131,6 @@ void loop()
   led_refresh();
 
   // do some periodic updates
-  EVERY_N_MILLISECONDS( 20 ) { gHue+=parameter8/20; } // slowly cycle the "base color" through the rainbow
-//  EVERY_N_MILLISECONDS( 100 ) { report(); }
-//  EVERY_N_SECONDS( 10 ) { nextPattern(); } // change patterns periodically
+  //  EVERY_N_MILLISECONDS( 20 ) { gHue+=parameter8/20; } // slowly cycle the "base color" through the rainbow
+  //  EVERY_N_SECONDS( 10 ) { nextPattern(); } // change patterns periodically
 }
