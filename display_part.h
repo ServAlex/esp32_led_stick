@@ -46,18 +46,18 @@ void displaySetup()
 
 void drawStringWithOffset(String string, int32_t dx, int32_t dy )
 {
-  tft.drawString(string, tft.width() / 2 + dx, tft.height() / 2 + dy);
+    tft.drawString(string, tft.width() / 2 + dx, tft.height() / 2 + dy);
 }
 
 void clearScreen()
 {
-  tft.fillScreen(TFT_BLACK);
+    tft.fillScreen(TFT_BLACK);
 }
 
 void writeCenter(String str)
 {
-  tft.setTextColor(TFT_GREEN, TFT_BLACK);
-  tft.drawString(str, tft.width() / 2, tft.height() / 2);
+    tft.setTextColor(TFT_GREEN, TFT_BLACK);
+    tft.drawString(str, tft.width() / 2, tft.height() / 2);
 }
 
 #endif
