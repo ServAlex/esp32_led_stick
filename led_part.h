@@ -34,7 +34,7 @@ CRGB *ledsRGB = (CRGB *) &leds[0];
 #define FRAMES_PER_SECOND  (120*2*2)
 
 
-uint8_t gHue = 0; // rotating "base color" used by many of the patterns
+float gHue = 0; // rotating "base color" used by many of the patterns
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 
@@ -58,6 +58,7 @@ void solidRed();
 void solidBlue();
 void solidWhite();
 void solidHue();
+void morphingHue();
 void juggle();
 void redBlue();
 uint8_t correctIntensity(uint8_t val);
@@ -70,6 +71,7 @@ SimplePatternList gPatterns = {
     solidBlue, 
     redBlue, 
     solidHue, 
+    morphingHue,
     runner, 
     rainbow, 
     fixedRainbow, 
@@ -98,13 +100,13 @@ FastLED.setBrightness(10);
 
 void led_refresh()
 {
-gPatterns[gCurrentPatternNumber]();
+    gPatterns[gCurrentPatternNumber]();
 
-FastLED.show();  
-FastLED.delay(1000/(90)); 
-//FastLED.delay(1000/(30*fpsMultiplier)); 
-//FastLED.delay(1000/(FRAMES_PER_SECOND)); 
-}
+    FastLED.show();  
+    FastLED.delay(1000/(100)); 
+    //FastLED.delay(1000/(30*fpsMultiplier)); 
+    //FastLED.delay(1000/(FRAMES_PER_SECOND)); 
+    }
 
 void nextPattern()
 {
@@ -135,6 +137,8 @@ String parameterNameForCurrentPattern()
     //  return "Hue delta";
     if(gPatterns[gCurrentPatternNumber] == solidHue)
         return "Hue";
+    if(gPatterns[gCurrentPatternNumber] == morphingHue)
+        return "Speed";
     if(gPatterns[gCurrentPatternNumber] == sinelon)
         return "Hue delta";
     if(gPatterns[gCurrentPatternNumber] == bpm)
@@ -152,6 +156,8 @@ String currentPatternName()
 {
     if(gPatterns[gCurrentPatternNumber] == solidHue)
         return "Hue";
+    if(gPatterns[gCurrentPatternNumber] == morphingHue)
+        return "Morph";
     if(gPatterns[gCurrentPatternNumber] == solidRed)
         return "Red";
     if(gPatterns[gCurrentPatternNumber] == solidGreen)
@@ -185,17 +191,20 @@ void rainbow()
 //fill_rainbow( leds, NUM_LEDS, gHue, 7);
 
     for(int i = 0; i < NUM_LEDS; i++){
-        leds[i] = CHSV((i * 256 / NUM_LEDS) + gHue, 255, 255);
+        leds[i] = CHSV((i * 256 / NUM_LEDS) + (int)gHue, 255, 255);
     }
     FastLED.show();
-    gHue++;
+
+    gHue += parameter8/10.f;
+    if(gHue > 255)
+        gHue-=255;
 }
 
 void fixedRainbow() 
 {
 //  fill_rainbow( leds, NUM_LEDS, parameter8, 7);
     for(int i = 0; i < NUM_LEDS; i++){
-        leds[i] = CHSV((i * 256 / NUM_LEDS) + gHue, 255, 255);
+        leds[i] = CHSV((i * 256 / NUM_LEDS) + (int)gHue, 255, 255);
     }
     FastLED.show();
 }
@@ -240,8 +249,12 @@ void bpm()
     CRGBPalette16 palette = PartyColors_p;
     uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
     for( int i = 0; i < NUM_LEDS; i++) { //9948
-        leds[i] = ColorFromPalette(palette, gHue+(i*2), beat-gHue+(i*10));
+        leds[i] = ColorFromPalette(palette, (int)gHue+(i*2), beat-(int)gHue+(i*10));
     }
+
+    gHue += parameter8/10.f;
+    if(gHue > 255)
+        gHue-=255;
 }
 
 void blank()
@@ -286,26 +299,30 @@ void solidHue()
     }
 }
 
+void morphingHue()
+{
+    for( int i = 0; i < NUM_LEDS; i++) 
+    {
+        leds[i] = CHSV((int)gHue, 255, 255);
+    }
+
+    //gHue += parameter8;
+
+    gHue += parameter8/20.f;
+    if(gHue > 255)
+        gHue-=255;
+}
+
+
 void redBlue()
 {
     uint8_t halfNum = NUM_LEDS/2;
-    uint8_t reversedParameter = 255 - parameter8;
-
-    uint8_t lit = (reversedParameter*halfNum)/255;
-    //  uint8_t partialLighting = (reversedParameter*halfNum)%255;
 
     for(int i = 0; i < halfNum; i++)
     {
-        leds[i] = CRGBW(255*(i<lit), 0, 0);
-        leds[NUM_LEDS - i - 1] = CRGBW(0, 0, 255*(i<lit));
+        leds[NUM_LEDS - i - 1] = CRGBW(0, 0, 255);
+        leds[i] = CRGBW(255, 0, 0);
     }
-    /*
-    if(partialLighting != 0)
-    {
-        leds[lit] = CRGB(correctIntensity(partialLighting), 0, 0);
-        leds[NUM_LEDS - lit - 1] = CRGBW(0, 0, correctIntensity(partialLighting));
-    }
-    */
 }
 
 uint8_t correctIntensity(uint8_t val)
@@ -328,13 +345,16 @@ static inline uint8_t bitsaw8( accum88 beats_per_minute, uint8_t lowest = 0, uin
     return result;
 }
 
-int pos = 0;
+float pos = 0;
 void runner()
 {
 
     for( int i = 0; i < NUM_LEDS; i++) 
     {
-        uint8_t level = correctIntensity(leds[i].white*0.99);
+        uint8_t level = leds[i].white*max((0.95 - parameter8/100.f), 0.3); // partial success
+        //uint8_t level = leds[i].white*0.95; // partial success
+        //uint8_t level = max(leds[i].white-1, 1);
+        //uint8_t level = correctIntensity(leds[i].white*0.99);
         //uint8_t level = correctIntensity(max(0, leds[i].white-10));
         leds[i] = CRGBW(level, level, level, level);
     }
@@ -354,8 +374,12 @@ void runner()
     }
     */
 
-    leds[(pos++)%NUM_LEDS] = CRGBW(255,255,255,255);
-    //CHSV(0, 0, 255);
+    float newPos = pos + parameter8/20.f;
+
+    for(int i = (int)pos; i < newPos; i++)
+        leds[(i)%NUM_LEDS] = CRGBW(255,255,255,255);
+
+    pos = newPos;
 
     //int pos = bitsaw8(189, 0, NUM_LEDS-1 );
     //leds[pos] = CHSV(0, 0, 255);
