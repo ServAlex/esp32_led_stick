@@ -42,7 +42,7 @@ uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 typedef void (*SimplePatternList[])();
 //SimplePatternList gPatterns = { solidRed, solidGreen, solidBlue};
 
-uint8_t parameter8 = 0;
+uint8_t parameter8 = 1;
 
 void blank();
 void runner();
@@ -70,15 +70,15 @@ SimplePatternList gPatterns = {
     solidGreen, 
     solidBlue, 
     redBlue, 
-    solidHue, 
-    morphingHue,
     runner, 
+    bpm,
     rainbow, 
     fixedRainbow, 
     /*confetti,*/ 
 //    sinelon, 
 //    juggle, 
-    bpm
+    solidHue, 
+    morphingHue,
 };
 
 int maxBrightness = 10;
@@ -98,26 +98,35 @@ FastLED.setBrightness(10);
     FastLED.show();
 }
 
+bool refreshNeeded = true;
+uint8_t parameter8_lastValue = 0;
 void led_refresh()
 {
+    if(parameter8 != parameter8_lastValue)
+    {
+        refreshNeeded = true;
+        parameter8_lastValue = parameter8;
+    }
+
     gPatterns[gCurrentPatternNumber]();
 
-    FastLED.show();  
     FastLED.delay(1000/(100)); 
     //FastLED.delay(1000/(30*fpsMultiplier)); 
     //FastLED.delay(1000/(FRAMES_PER_SECOND)); 
-    }
+}
 
 void nextPattern()
 {
     // add one to the current pattern number, and wrap around at the end
     gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE( gPatterns);
+    refreshNeeded = true;
 }
 
 void prevPattern()
 {
     // add one to the current pattern number, and wrap around at the end
     gCurrentPatternNumber = (gCurrentPatternNumber - 1 + ARRAY_SIZE( gPatterns)) % ARRAY_SIZE( gPatterns);
+    refreshNeeded = true;
 }
 
 /*
@@ -203,10 +212,14 @@ void rainbow()
 void fixedRainbow() 
 {
 //  fill_rainbow( leds, NUM_LEDS, parameter8, 7);
-    for(int i = 0; i < NUM_LEDS; i++){
-        leds[i] = CHSV((i * 256 / NUM_LEDS) + (int)gHue, 255, 255);
+    if(refreshNeeded)
+    {
+        refreshNeeded = false;
+        for(int i = 0; i < NUM_LEDS; i++){
+            leds[i] = CHSV((i * 256 / NUM_LEDS) + (int)parameter8, 255, 255);
+        }
+        FastLED.show();
     }
-    FastLED.show();
 }
 
 void rainbowWithGlitter() 
@@ -251,6 +264,7 @@ void bpm()
     for( int i = 0; i < NUM_LEDS; i++) { //9948
         leds[i] = ColorFromPalette(palette, (int)gHue+(i*2), beat-(int)gHue+(i*10));
     }
+    FastLED.show();  
 
     gHue += parameter8/10.f;
     if(gHue > 255)
@@ -259,43 +273,73 @@ void bpm()
 
 void blank()
 {
-    for(int i=0; i<NUM_LEDS; i++)
-        leds[i] = CRGBW(0, 0, 0);
+    if(refreshNeeded)
+    {
+        refreshNeeded = false;
+        for(int i=0; i<NUM_LEDS; i++)
+            leds[i] = CRGBW(0, 0, 0);
+        FastLED.show();  
         //leds[i] = CHSV(0, 0, 0);
+    }
 }
 void solidGreen()
 {
-    // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
-    for( int i = 0; i < NUM_LEDS; i++) { //9948
-        leds[i] = CRGBW(0, 255, 0);
-}
+    if(refreshNeeded)
+    {
+        refreshNeeded = false;
+        // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
+        for( int i = 0; i < NUM_LEDS; i++) { //9948
+            leds[i] = CRGBW(0, 255, 0);
+        }
+        FastLED.show();  
+    }
 }
 void solidRed()
 {
-    // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
-    for( int i = 0; i < NUM_LEDS; i++) { //9948
-        leds[i] = CRGBW(255, 0, 0);
+    if(refreshNeeded)
+    {
+        refreshNeeded = false;
+        // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
+        for( int i = 0; i < NUM_LEDS; i++) { //9948
+            leds[i] = CRGBW(255, 0, 0);
+        }
+        FastLED.show();  
     }
 }
 void solidBlue()
 {
-    // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
-    for( int i = 0; i < NUM_LEDS; i++) { //9948
-        leds[i] = CRGBW(0, 0, 255);
+    if(refreshNeeded)
+    {
+        refreshNeeded = false;
+        // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
+        for( int i = 0; i < NUM_LEDS; i++) { //9948
+            leds[i] = CRGBW(0, 0, 255);
+        }
+        FastLED.show();  
     }
 }
 void solidWhite()
 {
-    // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
-    for( int i = 0; i < NUM_LEDS; i++) { //9948
-        leds[i] = CRGBW(255, 255, 255, 255);
+    if(refreshNeeded)
+    {
+        refreshNeeded = false;
+        // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
+        for( int i = 0; i < NUM_LEDS; i++) { //9948
+            leds[i] = CRGBW(255, 255, 255, 255);
+        }
+        FastLED.show();  
     }
 }
 void solidHue()
 {
-    for( int i = 0; i < NUM_LEDS; i++) 
+    if(refreshNeeded)
     {
-        leds[i] = CHSV(parameter8, 255, 255);
+        refreshNeeded = false;
+        for( int i = 0; i < NUM_LEDS; i++) 
+        {
+            leds[i] = CHSV(parameter8, 255, 255);
+        }
+        FastLED.show();  
     }
 }
 
@@ -306,6 +350,7 @@ void morphingHue()
         leds[i] = CHSV((int)gHue, 255, 255);
     }
 
+    FastLED.show();  
     //gHue += parameter8;
 
     gHue += parameter8/20.f;
@@ -316,12 +361,17 @@ void morphingHue()
 
 void redBlue()
 {
-    uint8_t halfNum = NUM_LEDS/2;
-
-    for(int i = 0; i < halfNum; i++)
+    if(refreshNeeded)
     {
-        leds[NUM_LEDS - i - 1] = CRGBW(0, 0, 255);
-        leds[i] = CRGBW(255, 0, 0);
+        refreshNeeded = false;
+        uint8_t halfNum = NUM_LEDS/2;
+
+        for(int i = 0; i < halfNum; i++)
+        {
+            leds[NUM_LEDS - i - 1] = CRGBW(0, 0, 255);
+            leds[i] = CRGBW(255, 0, 0);
+        }
+        FastLED.show();  
     }
 }
 
@@ -384,6 +434,7 @@ void runner()
     //int pos = bitsaw8(189, 0, NUM_LEDS-1 );
     //leds[pos] = CHSV(0, 0, 255);
 
+    FastLED.show();  
 }
 void juggle() {
     /*
