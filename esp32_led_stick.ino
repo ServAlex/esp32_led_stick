@@ -79,10 +79,22 @@ void buttonRightPresHandler()
 
 uint32_t lastUpdated = 0;
 
+const float voltageMin = 3.2;
+const float voltageMax = 4.19;
+
 void report()
 {
     uint16_t v = analogRead(ADC_PIN);
+    //float battery_voltage = voltageMin + (voltageMax-voltageMin)*parameter8/255.0;
     float battery_voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
+    float percentage = min(1, (battery_voltage-voltageMin)/(voltageMax-voltageMin));
+    uint32_t color = TFT_RED;
+    if(battery_voltage>3.4)
+        color = TFT_YELLOW;
+    if(battery_voltage>3.9)
+        color = TFT_GREEN;
+    if(battery_voltage>4.26)
+        color = TFT_BLUE;
 
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
     int d = 25;
@@ -93,6 +105,9 @@ void report()
     drawStringWithOffset("Brghts " + String(brightness+1) + "/10", 0, 0);
     //drawStringWithOffset(, 0, d);
     drawStringWithOffset("Voltage " + String(battery_voltage), 0, 2*d);
+
+    tft.drawRoundRect(2, tft.height() - 7, tft.width()-2*2, 7, 4, color);
+    tft.fillRoundRect(5, tft.height() - 5, 4 + (tft.width()-5*2-4)*percentage, 3, 2, color);
 
     tft.fillCircle(5, tft.height()/2-d*2 + currentMenu*d, 3, TFT_GREEN);
 }
